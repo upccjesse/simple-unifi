@@ -1,0 +1,9 @@
+{
+    "require": {
+        "art-of-wifi/unifi-api-client": "^1.1",
+      "ext-sqlite3": "*",
+      "ext-pdo": "*",
+      "ext-ctype": "*",
+      "ext-json": "*"
+    }
+}
