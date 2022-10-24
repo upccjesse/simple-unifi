@@ -168,6 +168,7 @@ elseif (!$_SESSION["permissions"]["ap_group"]) {
 	integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ="
 	crossorigin="anonymous"></script>
 <script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+<script src="common.js"></script>
 
 <script>
 	let apGroupTable, apTable, ssidTable, apGroupId, selectedRow, apGroupName, apCheckedStatus
@@ -182,9 +183,11 @@ elseif (!$_SESSION["permissions"]["ap_group"]) {
                 {
                     data: 3,
                     render: function(data, type, row) {
-                        let param = JSON.stringify(row)
-                        let edit = "<button type=button class='btn btn-primary btn-sm' onclick='showEdit(`" + param + "`)'><i class=\"bi bi-pencil\"></i></button>"
-                        return "<div class='container gx-4'>" + edit + "</div>"
+                        if (row[0] !== "All APs") {
+                            let edit = createTableEditButton(row)
+                            return "<div class='container gx-4'>" + edit + "</div>"
+                        }
+                        return ""
                     }
                 }
             ]
@@ -276,45 +279,23 @@ elseif (!$_SESSION["permissions"]["ap_group"]) {
     function renameAPGroup(button) {
         let form = $("#editForm")
         let url = "set.php?func=rename-ap-group"
-
-        let origHtml = $(button).html()
-        $(button).html("Renaming...")
-        $(button).attr("disabled", "true")
+        setButtonPending(button, "Renaming...")
         $.ajax({
             type: "POST",
             url: url,
             data: form.serialize()
-        }).done(function(data) {
-            reloadAPGroupList()
-            $(button).removeClass("btn-primary")
-            $(button).addClass("btn-success")
-            $(button).html("Success...")
-            setTimeout(function() {
-                $("#editModal").modal("hide")
-                $(button).html(origHtml)
-                $(button).removeClass("btn-success")
-                $(button).addClass("btn-primary")
-                $(button).removeAttr("disabled")
-            }, 1000)
-        }).fail(function(data) {
-            $(button).removeClass("btn-primary")
-            $(button).addClass("btn-warning")
-            $(button).html("Failed...")
-            setTimeout(function() {
-                $(button).html(origHtml)
-                $(button).removeClass("btn-warning")
-                $(button).addClass("btn-primary")
-                $(button).removeAttr("disabled")
-            }, 1000)
+        }).done(function() {
+            setButtonSuccess(button)
+            closeModalTimeout("#editModal")
+        }).fail(function() {
+            setButtonFail(button)
         })
     }
 
 	function updateAPsInGroup(button) {
-	    let origHtml = $(button).html()
-		$(button).html("<i class='bi bi-save'></i> Saving..")
-        $(button).attr("disabled", "true")
+	    setButtonPending(button, "Saving...")
 		apCheckedStatus = []
-		$("#ap-list tbody input[type='checkbox']").each(function (el) {
+		$("#ap-list tbody input[type='checkbox']").each(function () {
             apCheckedStatus.push({
 				"id": $(this).attr("id"),
 				"checked": $(this).is(":checked") ? 1 : 0
@@ -327,32 +308,18 @@ elseif (!$_SESSION["permissions"]["ap_group"]) {
 				name: apGroupName,
 				aps: apCheckedStatus
 			}
-		}).done(function(data) {
+		}).done(function() {
             apTable.ajax.reload()
             reloadAPGroupList()
-            $(button).removeClass("btn-primary")
-            $(button).addClass("btn-success")
-            $(button).html("Success...")
-            setTimeout(function() {
-                $(button).html(origHtml)
-                $(button).removeClass("btn-success")
-                $(button).addClass("btn-primary")
-                $(button).removeAttr("disabled")
-            }, 1000)
-		})
+            setButtonSuccess(button)
+		}).fail(function() {
+		    setButtonFail(button)
+        })
 	}
 
 	function updateSSIDsInGroup(button) {
-        let origHtml = $(button).html()
-        $(button).html("<i class='bi bi-save'></i> Saving..")
-        $(button).attr("disabled", "true")
-        ssidCheckedStatus = []
-        $("#ssid-list tbody input[type='checkbox']").each(function (el) {
-            ssidCheckedStatus.push({
-                "id": $(this).attr("id"),
-                "checked": $(this).is(":checked") ? 1 : 0
-            })
-        })
+        setButtonPending(button, "Saving...")
+        let ssidCheckedStatus = getCheckedItemsInTable("#ssid-list tbody input[type='checkbox']")
         $.ajax({
             url: "set.php?func=update-ssids-in-group",
             data: {
@@ -361,30 +328,14 @@ elseif (!$_SESSION["permissions"]["ap_group"]) {
                 ssids: ssidCheckedStatus
             }
         }).done(function(data) {
-            $(button).removeClass("btn-primary")
-            $(button).addClass("btn-success")
-            $(button).html("Success...")
-            setTimeout(function() {
-                $(button).html(origHtml)
-                $(button).removeClass("btn-success")
-                $(button).addClass("btn-primary")
-                $(button).removeAttr("disabled")
-            }, 1000)
+            setButtonSuccess(button)
         }).fail(function(data) {
             let json = JSON.parse(data.responseText)
-            $(button).removeClass("btn-primary")
-            $(button).addClass("btn-warning")
-            $(button).html("Fail...")
             $("#ssid-error-box").html("<div class='alert alert-warning'>" + json.error + "</div>")
-            setTimeout(function() {
-                $(button).html(origHtml)
-                $(button).removeClass("btn-warning")
-                $(button).addClass("btn-primary")
-                $(button).removeAttr("disabled")
-            }, 1000)
+            setButtonFail(button)
             setTimeout(function() {
                 $("#ssid-error-box").html("")
-            }, 3000)
+            }, 5000)
         }).always(function() {
             apTable.ajax.reload()
             reloadAPGroupList()

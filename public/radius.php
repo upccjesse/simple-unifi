@@ -46,7 +46,7 @@ elseif (!$_SESSION["permissions"]["radius"]) {
             <button style="margin-bottom: 14px;" type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newModal">
                 New User
             </button>
-            <table class="display">
+            <table class="display" style="width: 100%;">
                 <thead>
                     <tr>
                         <th>User</th>
@@ -176,7 +176,7 @@ elseif (!$_SESSION["permissions"]["radius"]) {
             integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ="
             crossorigin="anonymous"></script>
     <script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
-
+    <script src="common.js"></script>
     <script>
         let table
         $(() => {
@@ -190,51 +190,14 @@ elseif (!$_SESSION["permissions"]["radius"]) {
                     {
                         data: 4,
                         render: function(data, type, row) {
-                            let param = JSON.stringify(row)
-                            let edit = "<button type=button class='btn btn-primary btn-sm' onclick='showEdit(`" + param + "`)'><i class=\"bi bi-pencil\"></i></button>"
-                            let del = "<button type=button class='btn btn-danger btn-sm' onclick='showDelete(`" + param + "`)'><i class=\"bi bi-trash\"></i></button>"
+                            let edit = createTableEditButton(row)
+                            let del = createTableDeleteButton(row)
                             return "<div class='container gx-4'>" + edit + del + "</div>"
                         }
                     },
                 ]
             })
         })
-
-        function newUser(button) {
-            let form = $("#newForm")
-            let url = "set.php?func=new-user"
-
-            let origHtml = $(button).html()
-            $(button).html("Saving...")
-            $(button).attr("disabled", "true")
-            $.ajax({
-                type: "POST",
-                url: url,
-                data: form.serialize()
-            }).done(function(data) {
-                table.ajax.reload()
-                $(button).removeClass("btn-primary")
-                $(button).addClass("btn-success")
-                $(button).html("Success...")
-                setTimeout(function() {
-                    $("#newModal").modal("hide")
-                    $(button).html(origHtml)
-                    $(button).removeClass("btn-success")
-                    $(button).addClass("btn-primary")
-                    $(button).removeAttr("disabled")
-                }, 1000)
-            }).fail(function(data) {
-                $(button).removeClass("btn-primary")
-                $(button).addClass("btn-warning")
-                $(button).html("Failed...")
-                setTimeout(function() {
-                    $(button).html(origHtml)
-                    $(button).removeClass("btn-warning")
-                    $(button).addClass("btn-primary")
-                    $(button).removeAttr("disabled")
-                }, 1000)
-            })
-        }
 
         function showEdit(data) {
             data = JSON.parse(data)
@@ -254,75 +217,54 @@ elseif (!$_SESSION["permissions"]["radius"]) {
             $("#deleteModal").modal("show")
         }
 
-        function deleteUser(button) {
-            let form = $("#deleteForm")
-            let url = "set.php?func=delete-user"
-
-            let origHtml = $(button).html()
-            $(button).html("Deleting...")
-            $(button).attr("disabled", "true")
+        function newUser(button) {
+            let form = $("#newForm")
+            let url = "set.php?func=new-user"
+            setButtonPending(button, "Saving...")
             $.ajax({
                 type: "POST",
                 url: url,
                 data: form.serialize()
             }).done(function(data) {
                 table.ajax.reload()
-                $(button).removeClass("btn-danger")
-                $(button).addClass("btn-success")
-                $(button).html("Success...")
-                setTimeout(function() {
-                    $("#deleteModal").modal("hide")
-                    $(button).html(origHtml)
-                    $(button).removeClass("btn-success")
-                    $(button).addClass("btn-danger")
-                    $(button).removeAttr("disabled")
-                }, 1000)
+                setButtonSuccess(button)
+                closeModalTimeout("#newModal", 750)
             }).fail(function(data) {
-                $(button).removeClass("btn-danger")
-                $(button).addClass("btn-warning")
-                $(button).html("Failed...")
-                setTimeout(function() {
-                    $(button).html(origHtml)
-                    $(button).removeClass("btn-warning")
-                    $(button).addClass("btn-danger")
-                    $(button).removeAttr("disabled")
-                }, 1000)
+                setButtonFail(button)
+            })
+        }
+
+        function deleteUser(button) {
+            let form = $("#deleteForm")
+            let url = "set.php?func=delete-user"
+            setButtonPending(button, "Deleting...")
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: form.serialize()
+            }).done(function() {
+                table.ajax.reload()
+                setButtonSuccess(button)
+                closeModalTimeout("#deleteModal", 750)
+            }).fail(function() {
+                setButtonFail(button)
             })
         }
 
         function editUser(button) {
             let form = $("#editForm")
             let url = "set.php?func=edit-user"
-
-            let origHtml = $(button).html()
-            $(button).html("Updating...")
-            $(button).attr("disabled", "true")
+            setButtonPending(button, "Updating...")
             $.ajax({
                 type: "POST",
                 url: url,
                 data: form.serialize()
-            }).done(function(data) {
+            }).done(function() {
                 table.ajax.reload()
-                $(button).removeClass("btn-primary")
-                $(button).addClass("btn-success")
-                $(button).html("Success...")
-                setTimeout(function() {
-                    $("#editModal").modal("hide")
-                    $(button).html(origHtml)
-                    $(button).removeClass("btn-success")
-                    $(button).addClass("btn-primary")
-                    $(button).removeAttr("disabled")
-                }, 1000)
-            }).fail(function(data) {
-                $(button).removeClass("btn-primary")
-                $(button).addClass("btn-warning")
-                $(button).html("Failed...")
-                setTimeout(function() {
-                    $(button).html(origHtml)
-                    $(button).removeClass("btn-warning")
-                    $(button).addClass("btn-primary")
-                    $(button).removeAttr("disabled")
-                }, 1000)
+                setButtonSuccess(button)
+                closeModalTimeout("#editModal", 750)
+            }).fail(function() {
+                setButtonFail(button)
             })
         }
     </script>
