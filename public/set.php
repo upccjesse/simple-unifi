@@ -12,7 +12,7 @@ if ($function == "new-user") {
 
 
 	if (verify_input($username, $password, $vlan)) {
-		$response = $unifi_connection->create_radius_account($username, $password, 13, 1, $vlan);
+		$response = $unifi_connection->create_radius_account($username, $password, 13, 6, $vlan);
 		if ($response) {
 			header('HTTP/1.1 200 OK');
 			echo json_encode($response, JSON_PRETTY_PRINT);
